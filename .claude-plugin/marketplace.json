@@ -1,0 +1,13 @@
+{
+  "name": "route-wise-screenshot-comparison-tool",
+  "owner": {
+    "name": "sandeepKumarLambdatest"
+  },
+  "plugins": [
+    {
+      "name": "route-wise-screenshot-comparison-tool",
+      "source": "./",
+      "description": "Webpack route extraction + login-aware route screenshot comparison report (token-free re-runnable)."
+    }
+  ]
+}

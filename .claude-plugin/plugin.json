@@ -1,0 +1,22 @@
+{
+  "name": "route-wise-screenshot-comparison-tool",
+  "version": "1.0.0",
+  "description": "Webpack-extracts a SPA's route list, logs in (session check first, direct curl-cookie API fallback), screenshots every route, and builds a re-runnable token-free before/after comparison report.",
+  "author": {
+    "name": "sandeepKumarLambdatest",
+    "email": "sandeepk@testmuai.com"
+  },
+  "commands": "./commands",
+  "tools": {
+    "webpackRouteExtractor": "./tools/webpack.routes.config.js",
+    "routeExtractorPlugin": "./tools/route-extractor-plugin.js",
+    "routeExtractorLoader": "./tools/route-extractor-loader.js",
+    "ensureLogin": "./tools/ensure-login.sh",
+    "cookieLogin": "./tools/cookie-login.js",
+    "checkAuth": "./tools/check-auth.js",
+    "captureRoutes": "./tools/capture-routes.js",
+    "buildReport": "./tools/build-report.js",
+    "serveReport": "./tools/serve-report.js",
+    "generateReport": "./generate-report.sh"
+  }
+}
