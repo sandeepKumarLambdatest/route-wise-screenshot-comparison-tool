@@ -1,6 +1,8 @@
 node_modules/
 reports/run-*/
 reports/invig-*/
+reports/invig4-*/
+reports/_verify-*.png
 reports/smoke/
 reports/routes.diff.*.json
 reports/routes.smoke.json
