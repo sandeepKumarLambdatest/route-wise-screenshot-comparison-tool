@@ -9,7 +9,7 @@
  * never needs ts-loader/babel-loader for the rest of the app.
  *
  * Recognises:
- *   <Route path="/foo" />                         (react-router JSX)
+ *   <Route|*Route path="/foo" />                  (react-router JSX incl. Private/PublicRoute guards)
  *   { path: '/foo', name: 'foo' }                 (route config objects)
  *   createBrowserRouter([{ path: '/foo' }, ...])  (data-router arrays)
  *   { base: '/security', tabs: ['a','b'] }        (tabbed containers → expanded)
@@ -53,7 +53,7 @@ module.exports = function routeExtractorLoader(source) {
     // <Route path="/foo" />
     JSXOpeningElement(path) {
       const nm = path.node.name;
-      if (!nm || nm.name !== 'Route') return;
+      if (!nm || typeof nm.name !== 'string' || !/Route$/.test(nm.name)) return;
       const attr = path.node.attributes.find((a) => a.name && a.name.name === 'path');
       if (attr && attr.value && attr.value.type === 'StringLiteral') add(attr.value.value);
     },

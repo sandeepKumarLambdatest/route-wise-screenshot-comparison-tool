@@ -1,5 +1,9 @@
 node_modules/
 reports/run-*/
+reports/invig-*/
+reports/smoke/
+reports/routes.diff.*.json
+reports/routes.smoke.json
 reports/.auth/
 reports/.webpack-routes/
 reports/routes.generated.json

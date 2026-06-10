@@ -30,13 +30,21 @@ export PORT="${PORT:-5056}"
 echo "════════ route-wise screenshot report :: RUN=$RUN ════════"
 
 echo "── 1/5 webpack route extraction ──"
-: "${ROUTE_SRC:?set ROUTE_SRC=/abs/path/to/src/routes/index.tsx in $ENVFILE}"
-npx --no-install webpack --config tools/webpack.routes.config.js \
-  || npx webpack --config tools/webpack.routes.config.js
+if [ "${SKIP_EXTRACT:-0}" = "1" ]; then
+  echo "   SKIP_EXTRACT=1 — reusing pre-filtered $ROUTES_OUT"
+else
+  : "${ROUTE_SRC:?set ROUTE_SRC=/abs/path/to/src/routes/index.tsx in $ENVFILE}"
+  npx --no-install webpack --config tools/webpack.routes.config.js \
+    || npx webpack --config tools/webpack.routes.config.js
+fi
 echo "   routes: $(node -e "console.log(require('./'+process.env.ROUTES_OUT).count)" 2>/dev/null || echo '?')"
 
 echo "── 2/5 ensure login (check first, curl-cookie fallback) ──"
-tools/ensure-login.sh "$ENVFILE" || { echo "login failed — aborting"; exit 1; }
+if ! tools/ensure-login.sh "$ENVFILE"; then
+  [ "${LOGIN_BEST_EFFORT:-0}" = "1" ] \
+    && echo "login failed — LOGIN_BEST_EFFORT=1, continuing (private routes will show auth-bounce, not faked)" \
+    || { echo "login failed — aborting"; exit 1; }
+fi
 
 echo "── 3/5 capture routes ──"
 : "${ORIGINS:?set ORIGINS in $ENVFILE, e.g. \"before=https://a;after=https://b\"}"
