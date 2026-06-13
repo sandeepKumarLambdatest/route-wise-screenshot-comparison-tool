@@ -24,17 +24,29 @@ const SKIP_TEMPLATED = process.env.INCLUDE_TEMPLATED !== '1';
 const MAX_ROUTES = process.env.MAX_ROUTES ? parseInt(process.env.MAX_ROUTES, 10) : Infinity;
 
 function parseOrigins(s) {
-  if (!s) throw new Error('set ORIGINS, e.g. "before=https://a;after=https://b"');
+  if (!s) throw new Error('set ORIGINS, e.g. "before=https://a;after=https://b" (opt 3rd field = per-origin cookie file: "label=url=./cookies.json")');
   return s.split(';').map((p) => p.trim()).filter(Boolean).map((p) => {
     const i = p.indexOf('=');
-    return { label: p.slice(0, i).trim(), url: p.slice(i + 1).trim().replace(/\/$/, '') };
+    const label = p.slice(0, i).trim();
+    const rest = p.slice(i + 1).trim();
+    // optional per-origin cookie jar: label=url=/abs/cookies.json
+    const j = rest.indexOf('=');
+    if (j >= 0) return { label, url: rest.slice(0, j).trim().replace(/\/$/, ''), cookies: rest.slice(j + 1).trim() };
+    return { label, url: rest.replace(/\/$/, ''), cookies: null };
   });
+}
+
+const _stateCache = {};
+function loadState(file) {
+  if (!file) return undefined;
+  if (!(file in _stateCache)) _stateCache[file] = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : undefined;
+  return _stateCache[file];
 }
 
 (async () => {
   const { routes } = JSON.parse(fs.readFileSync(ROUTES_JSON, 'utf8'));
   const origins = parseOrigins(process.env.ORIGINS);
-  const storageState = fs.existsSync(COOKIES) ? JSON.parse(fs.readFileSync(COOKIES, 'utf8')) : undefined;
+  const defaultState = fs.existsSync(COOKIES) ? JSON.parse(fs.readFileSync(COOKIES, 'utf8')) : undefined;
   const todo = routes.filter((r) => !(SKIP_TEMPLATED && r.templated)).slice(0, MAX_ROUTES);
   fs.mkdirSync(OUTDIR, { recursive: true });
 
@@ -46,6 +58,7 @@ function parseOrigins(s) {
     fs.mkdirSync(rdir, { recursive: true });
     const entry = { name: r.name, path: r.path, shots: {} };
     for (const o of origins) {
+      const storageState = o.cookies ? loadState(o.cookies) : defaultState;
       const ctx = await browser.newContext({ storageState, ignoreHTTPSErrors: true, viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
       const page = await ctx.newPage();
       const errors = [], failed = [];
