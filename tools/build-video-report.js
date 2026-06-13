@@ -33,7 +33,11 @@ const manifest = JSON.parse(fs.readFileSync(path.join(VIDEOS, 'manifest.json'), 
 const routes = ROUTES_FILE ? (JSON.parse(fs.readFileSync(ROUTES_FILE, 'utf8')).routes || []) : [];
 const routeByPath = new Map(routes.map((r) => [r.path, r]));
 
-// coverage matrix: { route -> { type -> count } }. test-map wins if given.
+// runtime per-route coverage is in the manifest (record-routes.js full-coverage pass)
+const runtimeCoverage = manifest.routes.some((r) => r.elements && r.elements.length);
+
+// coverage matrix: { route -> { type -> count } }.
+// precedence: explicit test-map > RUNTIME exercised elements (manifest) > static AST.
 const matrix = {};
 const typeSet = new Set();
 if (COVERAGE_FILE) {
@@ -41,6 +45,14 @@ if (COVERAGE_FILE) {
   for (const [route, types] of Object.entries(tm)) {
     matrix[route] = {};
     for (const [t, n] of Object.entries(types)) { matrix[route][t] = Number(n) || 0; typeSet.add(t); }
+  }
+} else if (runtimeCoverage) {
+  for (const r of manifest.routes) {
+    matrix[r.path] = {};
+    for (const el of (r.elements || [])) {
+      if (!el.exercised) continue;
+      matrix[r.path][el.type] = (matrix[r.path][el.type] || 0) + 1; typeSet.add(el.type);
+    }
   }
 } else {
   for (const r of routes) {
@@ -61,6 +73,9 @@ for (const r of manifest.routes) {
 
 const totalEls = Object.values(matrix).reduce((a, m) => a + Object.values(m).reduce((x, y) => x + y, 0), 0);
 const okCount = manifest.routes.filter((r) => r.ok).length;
+const totDiscovered = manifest.routes.reduce((a, r) => a + (r.discovered || 0), 0);
+const totExercised = manifest.routes.reduce((a, r) => a + (r.exercised || 0), 0);
+const totModals = manifest.routes.reduce((a, r) => a + (r.modals_opened || 0), 0);
 
 const videoCards = manifest.routes.map((r) => {
   const meta = routeByPath.get(r.path);
@@ -69,9 +84,15 @@ const videoCards = manifest.routes.map((r) => {
   const media = r.video && r.bytes
     ? `<video controls preload="metadata" src="${esc(r.video)}"></video><div class="cap">${esc(r.video)} · ${(r.bytes / 1024).toFixed(0)} KB</div>`
     : '<div class="novideo">no video captured</div>';
+  // runtime coverage counts (record-routes full-coverage pass), fall back to legacy `interactions`
+  const cov = r.discovered != null
+    ? `discovered <b>${r.discovered}</b> · exercised <b class="exb">${r.exercised}</b>` +
+      (r.modals_opened ? ` · modals <b class="mob">${r.modals_opened}</b>` : '') +
+      (r.capped ? ' · <span class="bad">capped</span>' : '')
+    : `${r.interactions || 0} interaction(s)`;
   return `<section class="card">
     <h3><code class="rp">${esc(r.path)}</code> ${badge}</h3>
-    <div class="meta">${r.interactions} interaction(s)${cmp}</div>
+    <div class="meta">${cov}${cmp}</div>
     ${media}
   </section>`;
 }).join('\n');
@@ -97,6 +118,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Per-route 
  .rp{color:#79c0ff} .meta{color:#8b949e;font-size:12px;margin-bottom:8px}
  video{width:100%;border:1px solid #30363d;border-radius:6px;background:#000;display:block}
  .cap{font-size:11px;color:#8b949e;margin-top:4px} .novideo{color:#f85149;font-size:12px;padding:20px;text-align:center}
+ .exb{color:#3fb950} .mob{color:#d2a8ff}
  .ok{color:#3fb950;font-size:11px;border:1px solid #238636;border-radius:10px;padding:1px 8px}
  .bad{color:#f85149;font-size:11px;border:1px solid #cf222e;border-radius:10px;padding:1px 8px}
  table{border-collapse:collapse;margin:0 28px;font-size:13px} th,td{border:1px solid #30363d;padding:6px 10px;text-align:center}
@@ -104,14 +126,14 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Per-route 
 </style></head><body>
 <header>
  <h1>Per-route Video + Coverage Matrix</h1>
- <div class="sub">${esc(manifest.generatedAt)} · base ${esc(manifest.base)} · ${manifest.routes.length} routes (${okCount} ok) · ${totalEls} interactive elements · ${copied} videos</div>
+ <div class="sub">${esc(manifest.generatedAt)} · base ${esc(manifest.base)} · ${manifest.routes.length} routes (${okCount} ok) · ${copied} videos${runtimeCoverage ? ` · runtime coverage: <b class="exb">${totExercised}</b>/${totDiscovered} elements exercised · <b class="mob">${totModals}</b> modals opened` : ` · ${totalEls} interactive elements`}</div>
 </header>
 <h2>Route recordings</h2>
 <div class="cards">${videoCards}</div>
-<h2>Coverage matrix — route × interactive-element-type</h2>
+<h2>Coverage matrix — route × ${runtimeCoverage ? 'RUNTIME-exercised element type' : 'interactive-element-type'}</h2>
 <table>${matrixHead}${matrixRows}</table>
 <div style="height:32px"></div>
 </body></html>`;
 
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
-console.log(JSON.stringify({ ok: true, out: OUT, routes: manifest.routes.length, videos: copied, types, totalElements: totalEls }));
+console.log(JSON.stringify({ ok: true, out: OUT, routes: manifest.routes.length, videos: copied, types, totalElements: totalEls, runtimeCoverage, discovered: totDiscovered, exercised: totExercised, modals_opened: totModals }));
