@@ -32,6 +32,7 @@ const OUT = arg('--out', 'videos');
 const MAX = arg('--max') ? parseInt(arg('--max'), 10) : Infinity;
 const CAP = arg('--cap') ? parseInt(arg('--cap'), 10) : 60;
 const INCLUDE_TEMPLATED = has('--templated');
+const HASH = has('--hash'); // app uses HashRouter -> deep-link via location.hash (#/path)
 
 if (!BASE || (!ROUTES_FILE && !REPO)) {
   console.error('usage: record-routes.js --base <url> (--routes <file.json> | --repo <dir>) [--out videos] [--max N] [--cap 60] [--templated]');
@@ -99,21 +100,23 @@ const ENUMERATE = `(() => {
     el.getAttribute('name') || el.getAttribute('placeholder') ||
     el.getAttribute('title') || el.getAttribute('href') || ''
   );
+  // chrome = nav/sidebar/header/footer — clicking these re-renders layout and
+  // strands the in-content elements, so exercise MAIN CONTENT first.
+  const isChrome = (el) => !!el.closest('nav,[role=navigation],aside,header,footer,.sidebar,.app-header,.app-footer,.navbar,.ant-menu,.MuiDrawer-root');
   const nodes = [...document.querySelectorAll(SEL)].filter(vis);
   const seen = new Set();
-  const out = [];
+  const content = [], chrome = [];
   let i = 0;
   for (const el of nodes) {
     const type = kindOf(el);
-    const desc = type + ':' + (label(el) || el.tagName.toLowerCase()) + ':' + (seen.size);
     const dedupe = type + '|' + label(el) + '|' + el.tagName + '|' + (el.getAttribute('href') || '');
     if (seen.has(dedupe)) continue;
     seen.add(dedupe);
     const token = 'rrx-' + (i++);
     el.setAttribute('data-rrx', token);
-    out.push({ descriptor: type + ':' + (label(el) || el.tagName.toLowerCase()), type, token });
+    (isChrome(el) ? chrome : content).push({ descriptor: type + ':' + (label(el) || el.tagName.toLowerCase()), type, token, chrome: isChrome(el) });
   }
-  return out;
+  return content.concat(chrome); // content-first ordering
 })()`;
 
 // IN-PAGE: is a modal/dialog currently open?
@@ -136,8 +139,14 @@ const MODAL_OPEN = `(() => {
   const nap = (page, ms) => page.waitForTimeout(ms).catch(() => {});
 
   const deepLink = async (page, p) => {
-    await page.evaluate((pp) => { window.history.pushState({}, '', pp); window.dispatchEvent(new PopStateEvent('popstate')); }, p).catch(() => {});
+    if (HASH) {
+      // HashRouter: drive the hash + fire hashchange so the router re-renders
+      await page.evaluate((pp) => { window.location.hash = pp; window.dispatchEvent(new HashChangeEvent('hashchange')); }, p).catch(() => {});
+    } else {
+      await page.evaluate((pp) => { window.history.pushState({}, '', pp); window.dispatchEvent(new PopStateEvent('popstate')); }, p).catch(() => {});
+    }
   };
+  const currentPath = (page) => page.evaluate((isHash) => (isHash ? (location.hash.replace(/^#/, '') || '/') : location.pathname), HASH).catch(() => null);
 
   for (const r of routes) {
     const name = stem(r.path);
@@ -173,6 +182,8 @@ const MODAL_OPEN = `(() => {
       for (const el of live) {
         if (page.isClosed()) break;
         const rec = { descriptor: el.descriptor, type: el.type, exercised: false, opened_modal: false, error: null };
+        // chrome nav links navigate away and re-render layout — record but don't click
+        if (el.chrome && el.type === 'link') { rec.error = 'skipped-nav'; elements.push(rec); continue; }
         try {
           const loc = page.locator(`[data-rrx="${el.token}"]`).first();
           if (!(await loc.count())) { rec.error = 'gone'; elements.push(rec); continue; }
@@ -215,7 +226,7 @@ const MODAL_OPEN = `(() => {
           }
 
           // a click may have navigated us off the route — re-deep-link back
-          const here = await page.evaluate(() => location.pathname).catch(() => null);
+          const here = await currentPath(page);
           if (here != null && r.path && here !== r.path) { await deepLink(page, r.path); await nap(page, 400); }
         } catch (e) { rec.error = String(e.message || e).slice(0, 80); }
         elements.push(rec);

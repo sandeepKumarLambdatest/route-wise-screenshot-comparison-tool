@@ -95,10 +95,14 @@ function findRouterFiles(repoDir) {
       seen.add(full);
       let txt;
       try { txt = fs.readFileSync(full, 'utf8'); } catch { continue; }
-      if (!/react-router|createBrowserRouter|createHashRouter|createMemoryRouter|<Routes|<Route\b|useRoutes|createRoutesFromElements/.test(txt)) continue;
+      // include router files AND bare route-config-array files (path:'…' literals,
+      // the admin-template `export const routes = [{path,element}]` convention)
+      const hasRouterToken = /react-router|createBrowserRouter|createHashRouter|createMemoryRouter|<Routes|<Route\b|useRoutes|createRoutesFromElements/.test(txt);
+      const pathLiterals = (txt.match(/path\s*:\s*['"]/g) || []).length;
+      if (!hasRouterToken && pathLiterals < 2) continue;
       const score =
         (txt.match(/<Route\b/g) || []).length * 2 +
-        (txt.match(/path\s*:/g) || []).length +
+        pathLiterals +
         (txt.match(/createBrowserRouter|createHashRouter|createMemoryRouter|createRoutesFromElements|useRoutes/g) || []).length * 3;
       out.push({ file: full, score });
     }
@@ -223,6 +227,45 @@ function extractObjectRouter(ast) {
   return { routes, saw: sawConfig };
 }
 
+// ---- route-config-array (admin-template convention) -------------------------
+// Many advanced templates (coreui/horizon/etc.) declare routes as a bare data
+// array — `export const routes = [{path:'/dashboard', element: Dashboard}, ...]`
+// — and render it elsewhere via `routes.map(r => <Route path={r.path} .../>)`.
+// No createBrowserRouter / no <Route path="literal"> to anchor on, so the two
+// extractors above miss it. Here we find the largest top-level array whose
+// elements are objects carrying a `path:` string, and read it as a flat config.
+function extractConfigArray(ast) {
+  const routes = [];
+  let best = null, bestScore = 0;
+  const scoreArray = (els) =>
+    els.filter((e) => e && e.type === 'ObjectExpression' &&
+      e.properties.some((pr) => pr.type === 'ObjectProperty' && (pr.key.name || pr.key.value) === 'path' &&
+        (pr.value.type === 'StringLiteral'))).length;
+  traverse(ast, {
+    ArrayExpression(p) {
+      // only top-level-ish arrays (declared/exported), not deeply nested literals
+      const sc = scoreArray(p.node.elements);
+      if (sc > bestScore) { bestScore = sc; best = p.node; }
+    },
+  });
+  if (!best || bestScore < 2) return { routes, saw: false };
+  for (const el of best.elements) {
+    if (!el || el.type !== 'ObjectExpression') continue;
+    let rPath = null, component = null;
+    for (const pr of el.properties) {
+      if (pr.type !== 'ObjectProperty' || !pr.key) continue;
+      const k = pr.key.name || pr.key.value;
+      if (k === 'path' && pr.value.type === 'StringLiteral') rPath = pr.value.value;
+      else if (k === 'element' || k === 'component' || k === 'Component') {
+        if (pr.value.type === 'Identifier') component = pr.value.name;
+        else if (pr.value.type === 'JSXElement') component = pr.value.openingElement.name && pr.value.openingElement.name.name;
+      }
+    }
+    if (rPath != null) routes.push({ path: rPath.startsWith('/') ? rPath : '/' + rPath, component, index: false, rawPath: rPath });
+  }
+  return { routes, saw: routes.length > 0 };
+}
+
 // ---- interactive elements per component -------------------------------------
 function resolveComponentFile(routerFile, componentName, repoDir, ast) {
   if (!componentName) return null;
@@ -295,9 +338,12 @@ function extractRoutes(repoDir) {
     try { ast = parseFile(cand.file).ast; } catch (e) { continue; }
     const jsx = extractJsx(ast);
     const obj = extractObjectRouter(ast);
-    let picked = null, convention = null;
-    if (jsx.routes.length && jsx.routes.length >= obj.routes.length) { picked = jsx.routes; convention = 'jsx-route-element'; }
-    else if (obj.routes.length) { picked = obj.routes; convention = 'object-data-router'; }
+    const cfg = extractConfigArray(ast);
+    // pick the convention that yields the most routes in this file
+    let picked = null, convention = null, n = 0;
+    if (jsx.routes.length > n) { picked = jsx.routes; convention = 'jsx-route-element'; n = jsx.routes.length; }
+    if (obj.routes.length > n) { picked = obj.routes; convention = 'object-data-router'; n = obj.routes.length; }
+    if (cfg.routes.length > n) { picked = cfg.routes; convention = 'route-config-array'; n = cfg.routes.length; }
     if (!picked || !picked.length) continue;
 
     // dedupe by full path, keep first; attach interactive elements per route
