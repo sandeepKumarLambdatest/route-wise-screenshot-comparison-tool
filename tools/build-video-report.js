@@ -47,11 +47,13 @@ if (COVERAGE_FILE) {
     for (const [t, n] of Object.entries(types)) { matrix[route][t] = Number(n) || 0; typeSet.add(t); }
   }
 } else if (runtimeCoverage) {
+  // matrix keyed by interactable FAMILY (falls back to type for legacy manifests)
   for (const r of manifest.routes) {
     matrix[r.path] = {};
     for (const el of (r.elements || [])) {
       if (!el.exercised) continue;
-      matrix[r.path][el.type] = (matrix[r.path][el.type] || 0) + 1; typeSet.add(el.type);
+      const k = el.family || el.type;
+      matrix[r.path][k] = (matrix[r.path][k] || 0) + 1; typeSet.add(k);
     }
   }
 } else {
@@ -76,6 +78,8 @@ const okCount = manifest.routes.filter((r) => r.ok).length;
 const totDiscovered = manifest.routes.reduce((a, r) => a + (r.discovered || 0), 0);
 const totExercised = manifest.routes.reduce((a, r) => a + (r.exercised || 0), 0);
 const totModals = manifest.routes.reduce((a, r) => a + (r.modals_opened || 0), 0);
+const totRevealed = manifest.routes.reduce((a, r) => a + (r.revealed_subtrees || 0), 0);
+const maxDepth = manifest.routes.reduce((a, r) => Math.max(a, r.max_depth_reached || 0), 0);
 
 const videoCards = manifest.routes.map((r) => {
   const meta = routeByPath.get(r.path);
@@ -87,13 +91,27 @@ const videoCards = manifest.routes.map((r) => {
   // runtime coverage counts (record-routes full-coverage pass), fall back to legacy `interactions`
   const cov = r.discovered != null
     ? `discovered <b>${r.discovered}</b> · exercised <b class="exb">${r.exercised}</b>` +
+      (r.revealed_subtrees ? ` · revealed <b class="rvb">${r.revealed_subtrees}</b>` : '') +
+      (r.max_depth_reached ? ` · maxDepth <b class="dpb">${r.max_depth_reached}</b>` : '') +
       (r.modals_opened ? ` · modals <b class="mob">${r.modals_opened}</b>` : '') +
       (r.capped ? ' · <span class="bad">capped</span>' : '')
     : `${r.interactions || 0} interaction(s)`;
+  // exercised-element detail: family + scenario + options + depth badges
+  const exRows = (r.elements || []).filter((e) => e.exercised).slice(0, 40).map((e) => {
+    const opt = (e.options_total != null) ? `<span class="opt">${e.options_selected != null ? e.options_selected : '?'}/${e.options_total}</span>` : '';
+    const sc = e.scenario ? `<span class="scn">${esc(e.scenario)}</span>` : '';
+    return `<tr><td class="dp">d${e.depth || 0}</td><td class="fam">${esc(e.family || e.type)}</td>`
+      + `<td>${sc} ${opt}</td><td class="dsc">${esc((e.descriptor || '').slice(0, 36))}</td></tr>`;
+  }).join('');
+  const detail = exRows
+    ? `<details class="dt"><summary>exercised elements (family · scenario · options · depth)</summary>`
+      + `<table class="el"><tr><th>depth</th><th>family</th><th>scenario / opts</th><th>element</th></tr>${exRows}</table></details>`
+    : '';
   return `<section class="card">
     <h3><code class="rp">${esc(r.path)}</code> ${badge}</h3>
     <div class="meta">${cov}${cmp}</div>
     ${media}
+    ${detail}
   </section>`;
 }).join('\n');
 
@@ -118,7 +136,13 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Per-route 
  .rp{color:#79c0ff} .meta{color:#8b949e;font-size:12px;margin-bottom:8px}
  video{width:100%;border:1px solid #30363d;border-radius:6px;background:#000;display:block}
  .cap{font-size:11px;color:#8b949e;margin-top:4px} .novideo{color:#f85149;font-size:12px;padding:20px;text-align:center}
- .exb{color:#3fb950} .mob{color:#d2a8ff}
+ .exb{color:#3fb950} .mob{color:#d2a8ff} .rvb{color:#f0b429} .dpb{color:#ff7b72}
+ details.dt{margin-top:8px;font-size:12px} details.dt summary{cursor:pointer;color:#8b949e}
+ table.el{border-collapse:collapse;margin-top:6px;width:100%;font-size:11px}
+ table.el th,table.el td{border:1px solid #30363d;padding:3px 6px;text-align:left}
+ table.el th{background:#161b22;color:#8b949e}
+ td.dp{color:#ff7b72;font-weight:600;text-align:center} td.fam{color:#3fb950;font-weight:600}
+ .scn{color:#f0b429} .opt{color:#79c0ff;font-weight:600} td.dsc{color:#8b949e}
  .ok{color:#3fb950;font-size:11px;border:1px solid #238636;border-radius:10px;padding:1px 8px}
  .bad{color:#f85149;font-size:11px;border:1px solid #cf222e;border-radius:10px;padding:1px 8px}
  table{border-collapse:collapse;margin:0 28px;font-size:13px} th,td{border:1px solid #30363d;padding:6px 10px;text-align:center}
@@ -126,14 +150,14 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Per-route 
 </style></head><body>
 <header>
  <h1>Per-route Video + Coverage Matrix</h1>
- <div class="sub">${esc(manifest.generatedAt)} · base ${esc(manifest.base)} · ${manifest.routes.length} routes (${okCount} ok) · ${copied} videos${runtimeCoverage ? ` · runtime coverage: <b class="exb">${totExercised}</b>/${totDiscovered} elements exercised · <b class="mob">${totModals}</b> modals opened` : ` · ${totalEls} interactive elements`}</div>
+ <div class="sub">${esc(manifest.generatedAt)} · base ${esc(manifest.base)} · ${manifest.routes.length} routes (${okCount} ok) · ${copied} videos${runtimeCoverage ? ` · runtime coverage: <b class="exb">${totExercised}</b>/${totDiscovered} exercised · <b class="rvb">${totRevealed}</b> subtrees revealed · maxDepth <b class="dpb">${maxDepth}</b> · <b class="mob">${totModals}</b> modals` : ` · ${totalEls} interactive elements`}</div>
 </header>
 <h2>Route recordings</h2>
 <div class="cards">${videoCards}</div>
-<h2>Coverage matrix — route × ${runtimeCoverage ? 'RUNTIME-exercised element type' : 'interactive-element-type'}</h2>
+<h2>Coverage matrix — route × ${runtimeCoverage ? 'interactable FAMILY (runtime)' : 'interactive-element-type'}</h2>
 <table>${matrixHead}${matrixRows}</table>
 <div style="height:32px"></div>
 </body></html>`;
 
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
-console.log(JSON.stringify({ ok: true, out: OUT, routes: manifest.routes.length, videos: copied, types, totalElements: totalEls, runtimeCoverage, discovered: totDiscovered, exercised: totExercised, modals_opened: totModals }));
+console.log(JSON.stringify({ ok: true, out: OUT, routes: manifest.routes.length, videos: copied, families: types, totalElements: totalEls, runtimeCoverage, discovered: totDiscovered, exercised: totExercised, revealed_subtrees: totRevealed, max_depth: maxDepth, modals_opened: totModals }));

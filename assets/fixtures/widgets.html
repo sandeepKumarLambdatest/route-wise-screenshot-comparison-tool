@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Widget tree fixture</title>
+<style>
+  body{font:14px/1.5 system-ui,sans-serif;margin:24px;max-width:900px;background:#fafafa;color:#111}
+  h2{margin:24px 0 8px;font-size:15px;border-bottom:1px solid #ddd;padding-bottom:4px}
+  .row{margin:8px 0;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  button{padding:6px 12px;border:1px solid #888;border-radius:6px;background:#fff;cursor:pointer}
+  .panel{border:1px solid #ccc;border-radius:6px;padding:10px;margin-top:6px;background:#fff}
+  [hidden]{display:none!important}
+  .listbox{border:1px solid #888;border-radius:6px;background:#fff;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+  .listbox [role=option],.listbox [role=menuitemcheckbox]{padding:6px 10px;cursor:pointer}
+  .listbox [aria-selected=true]{background:#dbeafe}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:100}
+  .dialog{background:#fff;border-radius:8px;padding:18px;min-width:420px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .menu{position:absolute;background:#fff;border:1px solid #888;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.2);z-index:50}
+  .menu [role=menuitem]{padding:6px 14px;cursor:pointer;position:relative;white-space:nowrap}
+  .menu [role=menuitem]:hover{background:#eee}
+  .tablist{display:flex;gap:4px} .tablist [role=tab]{padding:6px 12px;border:1px solid #ccc;border-bottom:none;border-radius:6px 6px 0 0;background:#eee;cursor:pointer}
+  .tablist [role=tab][aria-selected=true]{background:#fff;font-weight:600}
+</style>
+</head>
+<body>
+<h1>Widget tree fixture (nested, multi-family)</h1>
+
+<h2>Native selects</h2>
+<div class="row">
+  <label>Single <select id="ns1"><option value="">--</option><option value="a">Apple</option><option value="b">Banana</option><option value="c">Cherry</option></select></label>
+  <label>Multiple <select id="ns2" multiple size="3"><option value="x">Xenon</option><option value="y">Ytterbium</option><option value="z">Zinc</option><option value="w">Tungsten</option></select></label>
+</div>
+
+<h2>Custom multiselect (Select all + role=menuitemcheckbox)</h2>
+<div class="row">
+  <button id="msTrigger" aria-haspopup="listbox" aria-expanded="false" class="ant-select-multiple multiselect">Choose fruits ▾</button>
+</div>
+<div id="msBox" class="listbox" role="listbox" aria-multiselectable="true" hidden>
+  <div role="menuitemcheckbox" aria-checked="false" data-sa="1">Select all</div>
+  <div role="menuitemcheckbox" aria-checked="false">Mango</div>
+  <div role="menuitemcheckbox" aria-checked="false">Guava</div>
+  <div role="menuitemcheckbox" aria-checked="false">Lychee</div>
+  <div role="menuitemcheckbox" aria-checked="false">Papaya</div>
+</div>
+
+<div class="row">
+  <button id="msTrigger2" aria-haspopup="listbox" aria-expanded="false" class="ant-select-multiple multiselect">Choose colors ▾</button>
+</div>
+<div id="msBox2" class="listbox" role="listbox" aria-multiselectable="true" hidden>
+  <div role="menuitemcheckbox" aria-checked="false" data-sa="1">Select all</div>
+  <div role="menuitemcheckbox" aria-checked="false">Red</div>
+  <div role="menuitemcheckbox" aria-checked="false">Green</div>
+  <div role="menuitemcheckbox" aria-checked="false">Blue</div>
+</div>
+
+<div class="row">
+  <button id="msTrigger3" aria-haspopup="listbox" aria-expanded="false" class="ant-select-multiple multiselect">Choose sizes ▾</button>
+</div>
+<div id="msBox3" class="listbox" role="listbox" aria-multiselectable="true" hidden>
+  <div role="menuitemcheckbox" aria-checked="false" data-sa="1">Select all</div>
+  <div role="menuitemcheckbox" aria-checked="false">Small</div>
+  <div role="menuitemcheckbox" aria-checked="false">Medium</div>
+  <div role="menuitemcheckbox" aria-checked="false">Large</div>
+</div>
+
+<h2>Tabset</h2>
+<div class="tablist" role="tablist">
+  <button role="tab" aria-selected="true" aria-controls="tp1">Overview</button>
+  <button role="tab" aria-selected="false" aria-controls="tp2">Details</button>
+</div>
+<div id="tp1" role="tabpanel" class="panel">Overview content.</div>
+<div id="tp2" role="tabpanel" class="panel" hidden><input type="text" placeholder="detail field"></div>
+
+<h2>Accordion</h2>
+<div class="row">
+  <button id="accBtn" aria-expanded="false" aria-controls="accPanel" class="accordion">Advanced options ▾</button>
+</div>
+<div id="accPanel" class="panel" hidden>
+  <label>Threshold <input type="range" min="0" max="10" value="3"></label>
+  <label><input type="checkbox"> Enable beta</label>
+</div>
+
+<h2>Menu button with submenu</h2>
+<div class="row" style="position:relative">
+  <button id="menuBtn" aria-haspopup="menu" aria-expanded="false">Actions ▾</button>
+</div>
+<div id="menuBox" class="menu" role="menu" hidden style="left:24px;top:auto">
+  <div role="menuitem">New</div>
+  <div role="menuitem" id="moreItem" aria-haspopup="menu" aria-expanded="false">More ▸</div>
+  <div role="menu" id="subMenu" class="menu" hidden style="left:120px;top:30px">
+    <div role="menuitem">Export</div>
+    <div role="menuitem">Import</div>
+  </div>
+  <div role="menuitem">Delete</div>
+</div>
+
+<h2>Modal (contains combobox + tabset + accordion-with-input → depth 3+)</h2>
+<div class="row"><button id="modalBtn" class="modal-trigger">Open settings dialog</button></div>
+
+<div id="modal" class="overlay" role="dialog" aria-modal="true" hidden>
+  <div class="dialog">
+    <h3 style="margin-top:0">Settings</h3>
+    <div class="row">
+      <button id="cbTrigger" role="combobox" aria-haspopup="listbox" aria-expanded="false" class="MuiSelect-select">Pick region ▾</button>
+    </div>
+    <div id="cbBox" class="listbox" role="listbox" hidden>
+      <div role="option" aria-selected="false">US-East</div>
+      <div role="option" aria-selected="false">EU-West</div>
+      <div role="option" aria-selected="false">AP-South</div>
+    </div>
+    <div class="tablist" role="tablist" style="margin-top:10px">
+      <button role="tab" aria-selected="true" aria-controls="mtp1">General</button>
+      <button role="tab" aria-selected="false" aria-controls="mtp2">Security</button>
+    </div>
+    <div id="mtp1" role="tabpanel" class="panel">General settings.</div>
+    <div id="mtp2" role="tabpanel" class="panel" hidden>Security settings.</div>
+    <div class="row" style="margin-top:10px">
+      <button id="modalAcc" aria-expanded="false" aria-controls="modalAccPanel" class="accordion">Notification rules ▾</button>
+    </div>
+    <div id="modalAccPanel" class="panel" hidden>
+      <label>Email <input type="email" placeholder="you@example.com"></label>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="modalClose" aria-label="Close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var toggle = function (btn, box) {
+    btn.addEventListener('click', function () {
+      var open = box.hasAttribute('hidden');
+      if (open) { box.removeAttribute('hidden'); btn.setAttribute('aria-expanded', 'true'); }
+      else { box.setAttribute('hidden', ''); btn.setAttribute('aria-expanded', 'false'); }
+    });
+  };
+  // give each multiselect trigger an aria-controls so the harness scopes options
+  [['msTrigger', 'msBox'], ['msTrigger2', 'msBox2'], ['msTrigger3', 'msBox3']].forEach(function (p) {
+    $(p[0]).setAttribute('aria-controls', p[1]); toggle($(p[0]), $(p[1])); wireMulti($(p[1]));
+  });
+  toggle($('accBtn'), $('accPanel'));
+  toggle($('menuBtn'), $('menuBox'));
+  toggle($('cbTrigger'), $('cbBox'));
+  toggle($('modalAcc'), $('modalAccPanel'));
+
+  // multiselect checkboxes + select-all (per box)
+  function wireMulti(box) {
+    box.querySelectorAll('[role=menuitemcheckbox]').forEach(function (it) {
+      it.addEventListener('click', function () {
+        if (it.dataset.sa) {
+          var on = it.getAttribute('aria-checked') !== 'true';
+          box.querySelectorAll('[role=menuitemcheckbox]').forEach(function (o) {
+            o.setAttribute('aria-checked', String(on)); o.setAttribute('aria-selected', String(on));
+          });
+          return;
+        }
+        var c = it.getAttribute('aria-checked') === 'true';
+        it.setAttribute('aria-checked', String(!c)); it.setAttribute('aria-selected', String(!c));
+      });
+    });
+  }
+
+  // combobox options (single select)
+  $('cbBox').querySelectorAll('[role=option]').forEach(function (o) {
+    o.addEventListener('click', function () {
+      $('cbBox').querySelectorAll('[role=option]').forEach(function (x) { x.setAttribute('aria-selected', 'false'); });
+      o.setAttribute('aria-selected', 'true');
+      $('cbTrigger').textContent = o.textContent + ' ▾';
+      $('cbBox').setAttribute('hidden', ''); $('cbTrigger').setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // submenu
+  $('moreItem').addEventListener('click', function (e) {
+    e.stopPropagation();
+    var sm = $('subMenu'), open = sm.hasAttribute('hidden');
+    if (open) { sm.removeAttribute('hidden'); $('moreItem').setAttribute('aria-expanded', 'true'); }
+    else { sm.setAttribute('hidden', ''); $('moreItem').setAttribute('aria-expanded', 'false'); }
+  });
+
+  // tabs
+  function wireTabs(scope) {
+    scope.querySelectorAll('[role=tab]').forEach(function (t) {
+      t.addEventListener('click', function () {
+        scope.querySelectorAll('[role=tab]').forEach(function (x) {
+          x.setAttribute('aria-selected', 'false');
+          var p = document.getElementById(x.getAttribute('aria-controls')); if (p) p.setAttribute('hidden', '');
+        });
+        t.setAttribute('aria-selected', 'true');
+        var p = document.getElementById(t.getAttribute('aria-controls')); if (p) p.removeAttribute('hidden');
+      });
+    });
+  }
+  wireTabs(document);
+
+  // modal
+  $('modalBtn').addEventListener('click', function () { $('modal').removeAttribute('hidden'); });
+  $('modalClose').addEventListener('click', function () { $('modal').setAttribute('hidden', ''); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (!$('subMenu').hasAttribute('hidden')) { $('subMenu').setAttribute('hidden', ''); $('moreItem').setAttribute('aria-expanded', 'false'); return; }
+      if (!$('menuBox').hasAttribute('hidden')) { $('menuBox').setAttribute('hidden', ''); $('menuBtn').setAttribute('aria-expanded', 'false'); return; }
+      var msb = [['msBox', 'msTrigger'], ['msBox2', 'msTrigger2'], ['msBox3', 'msTrigger3']].find(function (p) { return !$(p[0]).hasAttribute('hidden'); });
+      if (msb) { $(msb[0]).setAttribute('hidden', ''); $(msb[1]).setAttribute('aria-expanded', 'false'); return; }
+      if (!$('cbBox').hasAttribute('hidden')) { $('cbBox').setAttribute('hidden', ''); $('cbTrigger').setAttribute('aria-expanded', 'false'); return; }
+      if (!$('modal').hasAttribute('hidden')) { $('modal').setAttribute('hidden', ''); return; }
+    }
+  });
+})();
+</script>
+</body>
+</html>
