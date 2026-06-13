@@ -7,6 +7,8 @@
   },
   "scripts": {
     "extract": "webpack --config tools/webpack.routes.config.js",
+    "extract-routes": "node tools/extract-routes.js",
+    "test:routes": "node tools/extract-routes.test.js",
     "login": "tools/ensure-login.sh config/target.env",
     "capture": "node tools/capture-routes.js",
     "report": "node tools/build-report.js",
