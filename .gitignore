@@ -4,6 +4,9 @@ reports/vrun-*/
 reports/invig-*/
 reports/invig4-*/
 reports/4env-2*/
+reports/4env-full/
+reports/4env-remaining/
+reports/4env-templated/
 reports/sync4env-auth/
 reports/sync4env/
 !reports/4env-manifests/
