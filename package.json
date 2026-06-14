@@ -1,9 +1,10 @@
 {
   "name": "route-wise-screenshot-comparison-tool",
-  "version": "1.0.0",
-  "description": "Webpack-extracts a SPA's routes, logs in (check-first, curl-cookie fallback), screenshots every route, builds a token-free comparison report.",
+  "version": "1.1.0",
+  "description": "One cross-workspace route tool: webpack/AST-extracts a SPA's routes, logs in (check-first, curl-cookie fallback), then per route screenshots a token-free before/after comparison OR records a video while exercising every interactive element, building a self-contained video + coverage report.",
   "bin": {
-    "route-report": "./generate-report.sh"
+    "route-report": "./generate-report.sh",
+    "route-video-report": "./generate-video-report.sh"
   },
   "scripts": {
     "extract": "webpack --config tools/webpack.routes.config.js",
@@ -11,9 +12,12 @@
     "test:routes": "node tools/extract-routes.test.js",
     "login": "tools/ensure-login.sh config/target.env",
     "capture": "node tools/capture-routes.js",
+    "record": "node tools/record-routes.js",
     "report": "node tools/build-report.js",
+    "video-report": "node tools/build-video-report.js",
     "serve": "node tools/serve-report.js",
-    "generate": "./generate-report.sh config/target.env"
+    "generate": "./generate-report.sh config/target.env",
+    "generate-video": "./generate-video-report.sh config/video.env"
   },
   "dependencies": {
     "@babel/parser": "^7.24.0",

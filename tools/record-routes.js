@@ -43,9 +43,10 @@ const CAP = arg('--cap') ? parseInt(arg('--cap'), 10) : 60; // per-LEVEL cap
 const MAX_DEPTH = arg('--depth') ? parseInt(arg('--depth'), 10) : 4;
 const INCLUDE_TEMPLATED = has('--templated');
 const HASH = has('--hash'); // app uses HashRouter -> deep-link via location.hash (#/path)
+const NO_VIDEO = has('--novideo'); // coverage walk only — skip recordVideo (screenshot/coverage-only mode)
 
 if (!BASE || (!ROUTES_FILE && !REPO && !URL_ONE)) {
-  console.error('usage: record-routes.js --base <url> (--routes <file.json> | --repo <dir> | --url <path>) [--out videos] [--max N] [--cap 60] [--depth 4] [--templated]');
+  console.error('usage: record-routes.js --base <url> (--routes <file.json> | --repo <dir> | --url <path>) [--out videos] [--max N] [--cap 60] [--depth 4] [--templated] [--hash] [--novideo]');
   process.exit(2);
 }
 
@@ -203,12 +204,13 @@ function ENUMERATE(scopeSel, visitedArr, seq) {
   for (const r of routes) {
     const name = stem(r.path);
     if (!browser.isConnected()) browser = await chromium.launch(LAUNCH); // resurrect a crashed browser
-    const ctx = await browser.newContext({
+    const ctxOpts = {
       ignoreHTTPSErrors: true,
       viewport: { width: 1920, height: 1080 },
       deviceScaleFactor: 1,
-      recordVideo: { dir: tmp, size: { width: 1920, height: 1080 } },
-    });
+    };
+    if (!NO_VIDEO) ctxOpts.recordVideo = { dir: tmp, size: { width: 1920, height: 1080 } };
+    const ctx = await browser.newContext(ctxOpts);
     const page = await ctx.newPage();
     let ok = true, error = null;
     let discovered = 0, exercised = 0, modalsOpened = 0, capped = false;
@@ -308,7 +310,7 @@ function ENUMERATE(scopeSel, visitedArr, seq) {
       name, path: r.path, video: file, bytes,
       discovered, exercised, modals_opened: modalsOpened, capped,
       revealed_subtrees: revealedSubtrees, max_depth_reached: maxDepthReached,
-      elements, ok: ok && bytes > 0, error,
+      elements, ok: NO_VIDEO ? ok : (ok && bytes > 0), error,
     });
     process.stderr.write(`recorded ${name} (${r.path}) ${bytes}B discovered=${discovered} exercised=${exercised} revealed=${revealedSubtrees} maxDepth=${maxDepthReached} modals=${modalsOpened}${error ? ' ERR:' + error : ''}\n`);
   }

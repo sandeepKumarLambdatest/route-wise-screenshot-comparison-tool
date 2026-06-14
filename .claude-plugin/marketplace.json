@@ -7,7 +7,7 @@
     {
       "name": "route-wise-screenshot-comparison-tool",
       "source": "./",
-      "description": "Webpack route extraction + login-aware route screenshot comparison report (token-free re-runnable)."
+      "description": "One cross-workspace route tool: webpack/AST route extraction + login-aware per-route screenshot comparison AND per-route video + interactive-coverage report (token-free re-runnable)."
     }
   ]
 }

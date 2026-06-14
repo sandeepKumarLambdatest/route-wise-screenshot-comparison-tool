@@ -1,5 +1,6 @@
 node_modules/
 reports/run-*/
+reports/vrun-*/
 reports/invig-*/
 reports/invig4-*/
 reports/_verify-*.png
@@ -11,5 +12,6 @@ reports/.webpack-routes/
 reports/routes.generated.json
 reports/serve-*.log
 config/target.env
+config/video.env
 *.log
 .DS_Store

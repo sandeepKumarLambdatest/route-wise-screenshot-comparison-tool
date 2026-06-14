@@ -6,7 +6,7 @@ const path = require('path');
 
 const OUTDIR = path.resolve(process.env.OUTDIR || './reports/run');
 const PORT = parseInt(process.env.PORT || '5056', 10);
-const TYPES = { '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.css': 'text/css', '.js': 'text/javascript' };
+const TYPES = { '.html': 'text/html', '.json': 'application/json', '.png': 'image/png', '.css': 'text/css', '.js': 'text/javascript', '.webm': 'video/webm', '.mp4': 'video/mp4', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml' };
 
 http
   .createServer((req, res) => {

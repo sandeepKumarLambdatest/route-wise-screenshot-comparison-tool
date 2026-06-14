@@ -1,7 +1,7 @@
 {
   "name": "route-wise-screenshot-comparison-tool",
-  "version": "1.0.0",
-  "description": "Webpack-extracts a SPA's route list, logs in (session check first, direct curl-cookie API fallback), screenshots every route, and builds a re-runnable token-free before/after comparison report.",
+  "version": "1.1.0",
+  "description": "One cross-workspace route tool: webpack/AST-extracts any SPA's routes, logs in (session check first, curl-cookie API fallback), then per route either screenshots a token-free before/after comparison report OR records a video while a runtime tree-walk exercises every interactive element, emitting a self-contained video + coverage report.",
   "author": {
     "name": "sandeepKumarLambdatest",
     "email": "sandeepk@testmuai.com"
@@ -11,12 +11,18 @@
     "webpackRouteExtractor": "./tools/webpack.routes.config.js",
     "routeExtractorPlugin": "./tools/route-extractor-plugin.js",
     "routeExtractorLoader": "./tools/route-extractor-loader.js",
+    "extractRoutes": "./tools/extract-routes.js",
+    "diffRoutes": "./tools/diff-routes.js",
     "ensureLogin": "./tools/ensure-login.sh",
     "cookieLogin": "./tools/cookie-login.js",
     "checkAuth": "./tools/check-auth.js",
     "captureRoutes": "./tools/capture-routes.js",
+    "recordRoutes": "./tools/record-routes.js",
+    "visualInteraction": "./tools/visual-interaction.js",
     "buildReport": "./tools/build-report.js",
+    "buildVideoReport": "./tools/build-video-report.js",
     "serveReport": "./tools/serve-report.js",
-    "generateReport": "./generate-report.sh"
+    "generateReport": "./generate-report.sh",
+    "generateVideoReport": "./generate-video-report.sh"
   }
 }
