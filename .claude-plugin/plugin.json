@@ -21,8 +21,10 @@
     "visualInteraction": "./tools/visual-interaction.js",
     "buildReport": "./tools/build-report.js",
     "buildVideoReport": "./tools/build-video-report.js",
+    "build4envVideoReport": "./tools/build-4env-video-report.js",
     "serveReport": "./tools/serve-report.js",
     "generateReport": "./generate-report.sh",
-    "generateVideoReport": "./generate-video-report.sh"
+    "generateVideoReport": "./generate-video-report.sh",
+    "generate4envVideo": "./generate-4env-video.sh"
   }
 }

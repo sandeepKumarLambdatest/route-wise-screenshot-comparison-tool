@@ -90,6 +90,30 @@ node tools/serve-report.js   # OUTDIR=report PORT=5057
 same coverage tree-walk with no recording — so screenshot-only / coverage-only
 use still works.
 
+**Authenticated routes.** `record-routes.js --storage cookies.json` loads a
+Playwright `storageState` cookie jar into every recording context, so auth-gated
+routes render real content instead of bouncing to `/login`. Mint the jar with
+`tools/cookie-login.js` (curls the login API → storageState) or
+`tools/ensure-login.sh`.
+
+## Multi-environment video sync report (before/after × prod/onprem)
+
+`generate-4env-video.sh` records one `.webm` **per route per environment** and
+`tools/build-4env-video-report.js` lays them out in a per-route grid (one column
+per env), so a reviewer can eyeball a sync diff for each route across all N envs
+side by side. It is the video twin of `generate-invig4.sh` (which does the same
+for screenshots). Everything is a knob — each env is a `key|label|baseURL|cookieJar`
+row in `ENVS`; nothing app-specific is hardcoded.
+
+```bash
+cp config/4env-video.env.example config/4env-video.env   # ROUTES_JSON + ENVS rows (+ per-env cookie jars)
+./generate-4env-video.sh config/4env-video.env           # records all envs, builds + serves on PORT (default 3010)
+```
+
+The report dir is self-contained (`index.html` + `<key>/<route>.webm` + a
+`report-manifest.json`); serve it with `serve-report.js` on a DevSpace-mapped
+port for a public URL.
+
 ## As a Claude Code plugin (installs across workspaces)
 
 The repo is a CC plugin published via `.claude-plugin/marketplace.json`. Install
@@ -128,9 +152,11 @@ npx playwright-core install chromium     # full chromium (video needs it, not he
 | `tools/record-routes.js` | per-route `.webm` + runtime interactive-coverage tree-walk |
 | `tools/visual-interaction.js` | interactable-family registry + synthetic cursor/highlight |
 | `tools/build-report.js` | static HTML screenshot comparison report |
-| `tools/build-video-report.js` | static HTML video + coverage-matrix report |
+| `tools/build-video-report.js` | static HTML video + coverage-matrix report (single env) |
+| `tools/build-4env-video-report.js` | static HTML per-route video grid across N envs (sync diff) |
 | `tools/serve-report.js` | static server (serves `.png`/`.webm`/`.mp4`) |
 | `generate-report.sh` | screenshot-comparison entrypoint |
-| `generate-video-report.sh` | video + coverage entrypoint |
+| `generate-video-report.sh` | video + coverage entrypoint (single env) |
+| `generate-4env-video.sh` | per-route video across N envs, side-by-side sync report |
 | `generate-invig4.sh` | 4-env prod/onprem before/after screenshot matrix |
-| `config/target.env.example` / `config/video.env.example` | all configuration |
+| `config/target.env.example` / `config/video.env.example` / `config/4env-video.env.example` | all configuration |

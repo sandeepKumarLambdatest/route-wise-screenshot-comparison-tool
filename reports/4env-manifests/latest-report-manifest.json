@@ -1,0 +1,38 @@
+{
+  "title": "lambda-invigilator-client prod-onprem-sync — per-route video, 4-env (before/after × prod/onprem)",
+  "generatedAt": "2026-06-14T23:20:39.601Z",
+  "out": "reports/4env-20260614-232039/report",
+  "envs": [
+    {
+      "key": "before-prod",
+      "label": "before Prod",
+      "base": "https://before-fae34c-3001.lambdatest.com",
+      "routes": 24,
+      "videos": 24
+    },
+    {
+      "key": "after-prod",
+      "label": "after Prod",
+      "base": "https://after-fae34c-3003.lambdatest.com",
+      "routes": 24,
+      "videos": 24
+    },
+    {
+      "key": "before-onprem",
+      "label": "before On-Prem",
+      "base": "https://hyperexecute-onprem-before-fae34c-3000.hyperexecute.cloud",
+      "routes": 24,
+      "videos": 24
+    },
+    {
+      "key": "after-onprem",
+      "label": "after On-Prem",
+      "base": "https://hyperexecute-onprem-after-fae34c-3002.hyperexecute.cloud",
+      "routes": 24,
+      "videos": 24
+    }
+  ],
+  "routes": 24,
+  "videos_copied": 96,
+  "total_bytes": 64847102
+}

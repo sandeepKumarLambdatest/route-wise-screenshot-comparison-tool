@@ -1,0 +1,36 @@
+{
+  "generatedAt": "2026-06-14T23:21:35.787Z",
+  "tool": "generate-4env-video.sh / build-4env-video-report.js",
+  "app": "lambda-invigilator-client (prod-onprem-sync)",
+  "served_url": "https://a7b4bb-3010.lambdatestinternal.com",
+  "port": 3010,
+  "routes_total_nontemplated": 59,
+  "routes_captured": 24,
+  "note": "curated 24-route high-signal subset (5 public auth-flow + 19 authed app/settings/members/licensing); authenticated via prod + onprem accessToken cookie jars so gated routes render real content; cap=4 depth=0 waituntil=domcontentloaded",
+  "envs": {
+    "before-prod": {
+      "base": "https://before-fae34c-3001.lambdatest.com",
+      "routes": 24,
+      "ok": 24,
+      "bytes": 17498375
+    },
+    "after-prod": {
+      "base": "https://after-fae34c-3003.lambdatest.com",
+      "routes": 24,
+      "ok": 24,
+      "bytes": 17715314
+    },
+    "before-onprem": {
+      "base": "https://hyperexecute-onprem-before-fae34c-3000.hyperexecute.cloud",
+      "routes": 24,
+      "ok": 24,
+      "bytes": 15229086
+    },
+    "after-onprem": {
+      "base": "https://hyperexecute-onprem-after-fae34c-3002.hyperexecute.cloud",
+      "routes": 24,
+      "ok": 24,
+      "bytes": 14404327
+    }
+  }
+}

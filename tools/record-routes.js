@@ -44,9 +44,11 @@ const MAX_DEPTH = arg('--depth') ? parseInt(arg('--depth'), 10) : 4;
 const INCLUDE_TEMPLATED = has('--templated');
 const HASH = has('--hash'); // app uses HashRouter -> deep-link via location.hash (#/path)
 const NO_VIDEO = has('--novideo'); // coverage walk only — skip recordVideo (screenshot/coverage-only mode)
+const STORAGE = arg('--storage'); // Playwright storageState JSON (cookie jar) -> authed session for gated routes
+const WAITUNTIL = arg('--waituntil', 'networkidle'); // goto wait state; authed SPAs rarely go idle -> use 'domcontentloaded'
 
 if (!BASE || (!ROUTES_FILE && !REPO && !URL_ONE)) {
-  console.error('usage: record-routes.js --base <url> (--routes <file.json> | --repo <dir> | --url <path>) [--out videos] [--max N] [--cap 60] [--depth 4] [--templated] [--hash] [--novideo]');
+  console.error('usage: record-routes.js --base <url> (--routes <file.json> | --repo <dir> | --url <path>) [--out videos] [--max N] [--cap 60] [--depth 4] [--templated] [--hash] [--novideo] [--storage cookies.json]');
   process.exit(2);
 }
 
@@ -209,6 +211,7 @@ function ENUMERATE(scopeSel, visitedArr, seq) {
       viewport: { width: 1920, height: 1080 },
       deviceScaleFactor: 1,
     };
+    if (STORAGE && fs.existsSync(STORAGE)) ctxOpts.storageState = STORAGE; // authed cookie jar -> gated routes render
     if (!NO_VIDEO) ctxOpts.recordVideo = { dir: tmp, size: { width: 1920, height: 1080 } };
     const ctx = await browser.newContext(ctxOpts);
     const page = await ctx.newPage();
@@ -220,10 +223,10 @@ function ENUMERATE(scopeSel, visitedArr, seq) {
     const seqRef = { v: 0 };
     try { // critical: load + route. --url mode = direct full-page nav (static page).
       if (URL_ONE) {
-        await page.goto(BASE + r.path, { waitUntil: 'networkidle', timeout: 45000 });
+        await page.goto(BASE + r.path, { waitUntil: WAITUNTIL, timeout: 45000 });
         await nap(page, 700);
       } else {
-        await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 45000 });
+        await page.goto(BASE + '/', { waitUntil: WAITUNTIL, timeout: 45000 });
         if (r.path && r.path !== '/') { await deepLink(page, r.path); await nap(page, 1200); }
         await nap(page, 900);
       }

@@ -3,6 +3,10 @@ reports/run-*/
 reports/vrun-*/
 reports/invig-*/
 reports/invig4-*/
+reports/4env-2*/
+reports/sync4env-auth/
+reports/sync4env/
+!reports/4env-manifests/
 reports/_verify-*.png
 reports/smoke/
 reports/routes.diff.*.json
@@ -13,5 +17,6 @@ reports/routes.generated.json
 reports/serve-*.log
 config/target.env
 config/video.env
+config/4env-video.env
 *.log
 .DS_Store
