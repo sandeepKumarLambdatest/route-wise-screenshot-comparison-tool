@@ -4,6 +4,10 @@ reports/vrun-*/
 reports/invig-*/
 reports/invig4-*/
 reports/4env-2*/
+reports/4env-screens-*/
+reports/last-4env-screens-run.txt
+reports/gen-*.log
+reports/capture-*.log
 reports/4env-full/
 reports/4env-remaining/
 reports/4env-templated/

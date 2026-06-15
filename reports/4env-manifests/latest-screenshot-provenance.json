@@ -1,0 +1,32 @@
+{
+  "generatedAt": "2026-06-15T07:41:17Z",
+  "tool": "capture-routes.js (screenshots) + build-report.js + serve-report.js",
+  "mode": "4-env SCREENSHOT comparison (before/after x prod/onprem, side-by-side per route)",
+  "app": "lambda-invigilator-client (prod-onprem-sync)",
+  "config": "config/4env-screens.env",
+  "run": "4env-screens-20260615-071920",
+  "report_dir": "reports/4env-screens-20260615-071920",
+  "served_url": "https://a7b4bb-3011.lambdatestinternal.com",
+  "port": 3011,
+  "served_verified_200": true,
+  "routes_nontemplated_total": 58,
+  "routes_captured": 58,
+  "templated_skipped": 23,
+  "envs": ["before-prod","after-prod","before-onprem","after-onprem"],
+  "origins": {
+    "before-prod": "https://before-fae34c-3001.lambdatest.com",
+    "after-prod": "https://after-fae34c-3003.lambdatest.com",
+    "before-onprem": "https://hyperexecute-onprem-before-fae34c-3000.hyperexecute.cloud",
+    "after-onprem": "https://hyperexecute-onprem-after-fae34c-3002.hyperexecute.cloud"
+  },
+  "screenshots_total": 232,
+  "screenshots_per_env": 58,
+  "zero_byte": 0,
+  "cookie_jars": {
+    "prod": "reports/.auth/prod-cookies.json (.lambdatest.com, re-minted)",
+    "onprem": "reports/.auth/onprem-cookies.json (.hyperexecute.cloud, re-minted)"
+  },
+  "verdict_counts": { "pass": 1, "warn": 48, "auth_bounce": 9, "fail": 0 },
+  "notes": "auth-bounce routes (9 prod / 7 onprem) are legitimate: /logout + /members/private-cloud-devices* + /product-license/* require entitlements the test account lacks; bounce set identical before/after = clean sync signal. 'warn' = SPA console-error noise, not failures. Cookie jars were expired at start; re-minted via cookie-login.js before capture.",
+  "capture_config": { "waitUntil": "networkidle (45s timeout)", "viewport": "1920x1080", "fullPage": true, "authed": true }
+}

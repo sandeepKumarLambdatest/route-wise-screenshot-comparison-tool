@@ -48,8 +48,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Route-wise
  .tile{display:flex;align-items:center;gap:4px;padding:6px 10px;border:1px solid #30363d;border-left-width:4px;border-radius:6px;color:#e6edf3;text-decoration:none;font-size:12px;background:#161b22}
  .route{padding:18px 28px;border-top:1px solid #21262d} .route h3{display:flex;align-items:center;gap:8px;font-size:16px}
  .route code{color:#79c0ff;background:#161b22;padding:2px 6px;border-radius:4px;font-size:12px} .v{font-size:11px;color:#8b949e;margin-left:auto}
- table.shots{width:100%;border-collapse:collapse} td.shot{vertical-align:top;padding:6px;width:0}
- td.shot img{max-width:46vw;border:1px solid #30363d;border-radius:6px;display:block}
+ table.shots{width:100%;border-collapse:collapse;table-layout:fixed} td.shot{vertical-align:top;padding:6px}
+ td.shot img{width:100%;max-height:520px;object-fit:contain;object-position:top;border:1px solid #30363d;border-radius:6px;display:block;background:#161b22}
  .cap{font-size:11px;color:#8b949e;margin-top:4px} .cap a{color:#79c0ff} .err{color:#f85149}
  a{color:#79c0ff}
 </style></head><body>
