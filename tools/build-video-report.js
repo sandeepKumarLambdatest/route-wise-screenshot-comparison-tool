@@ -20,6 +20,7 @@ function arg(flag, def) { const i = process.argv.indexOf(flag); return i >= 0 ? 
 const VIDEOS = arg('--videos');
 const ROUTES_FILE = arg('--routes');
 const COVERAGE_FILE = arg('--coverage');
+const INVENTORY_FILE = arg('--inventory'); // selector-inventory.js inventory.json -> per-route full selector list
 const OUT = arg('--out', 'report');
 
 if (!VIDEOS) {
@@ -35,6 +36,22 @@ const routeByPath = new Map(routes.map((r) => [r.path, r]));
 
 // runtime per-route coverage is in the manifest (record-routes.js full-coverage pass)
 const runtimeCoverage = manifest.routes.some((r) => r.elements && r.elements.length);
+
+// per-route FULL selector inventory (selector-inventory.js) — the complete
+// actionable-selector list per route, keyed by path.
+let inventoryByPath = new Map();
+if (INVENTORY_FILE && fs.existsSync(INVENTORY_FILE)) {
+  try { const inv = JSON.parse(fs.readFileSync(INVENTORY_FILE, 'utf8')); inventoryByPath = new Map((inv.routes || []).map((r) => [r.path, r])); } catch { /* */ }
+}
+const invSelectorTable = (r) => {
+  const inv = inventoryByPath.get(r.path);
+  if (!inv || !inv.selectors || !inv.selectors.length) return '';
+  const rows = inv.selectors.map((e, i) =>
+    `<tr><td>${i + 1}</td><td><code class="sel">${esc(e.selector)}</code></td><td>${esc(e.kind)}</td>`
+    + `<td>${esc(e.region || '')}</td><td>${esc((e.label || '').slice(0, 40))}</td><td>${esc(e.href || e.type || '')}</td></tr>`).join('');
+  return `<details class="dt"><summary>full selector inventory — ${inv.count} selectors</summary>`
+    + `<table class="el"><tr><th>#</th><th>selector</th><th>kind</th><th>region</th><th>label</th><th>href/type</th></tr>${rows}</table></details>`;
+};
 
 // coverage matrix: { route -> { type -> count } }.
 // precedence: explicit test-map > RUNTIME exercised elements (manifest) > static AST.
@@ -107,11 +124,15 @@ const videoCards = manifest.routes.map((r) => {
     ? `<details class="dt"><summary>exercised elements (family · scenario · options · depth)</summary>`
       + `<table class="el"><tr><th>depth</th><th>family</th><th>scenario / opts</th><th>element</th></tr>${exRows}</table></details>`
     : '';
+  const invDetail = invSelectorTable(r);
+  const invCount = inventoryByPath.get(r.path);
+  const invBadge = invCount ? ` · <b class="invb">${invCount.count} selectors</b>` : '';
   return `<section class="card">
-    <h3><code class="rp">${esc(r.path)}</code> ${badge}</h3>
+    <h3><code class="rp">${esc(r.path)}</code> ${badge}${invBadge}</h3>
     <div class="meta">${cov}${cmp}</div>
     ${media}
     ${detail}
+    ${invDetail}
   </section>`;
 }).join('\n');
 
@@ -136,7 +157,8 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><title>Per-route 
  .rp{color:#79c0ff} .meta{color:#8b949e;font-size:12px;margin-bottom:8px}
  video{width:100%;border:1px solid #30363d;border-radius:6px;background:#000;display:block}
  .cap{font-size:11px;color:#8b949e;margin-top:4px} .novideo{color:#f85149;font-size:12px;padding:20px;text-align:center}
- .exb{color:#3fb950} .mob{color:#d2a8ff} .rvb{color:#f0b429} .dpb{color:#ff7b72}
+ .exb{color:#3fb950} .mob{color:#d2a8ff} .rvb{color:#f0b429} .dpb{color:#ff7b72} .invb{color:#58a6ff}
+ code.sel{color:#a5d6ff;background:#0d1117;font-size:10px;word-break:break-all}
  details.dt{margin-top:8px;font-size:12px} details.dt summary{cursor:pointer;color:#8b949e}
  table.el{border-collapse:collapse;margin-top:6px;width:100%;font-size:11px}
  table.el th,table.el td{border:1px solid #30363d;padding:3px 6px;text-align:left}
